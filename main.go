@@ -1,14 +1,26 @@
 package main
 
+import (
+	"os"
+
+	"github.com/mikejke/go-te/editor"
+)
+
+var e = editor.Editor{}
+
 func main() {
-	err := enableRawMode(0)
+	err := e.EnableRawMode()
 	if err != nil {
-		die(err)
+		e.Die(err)
 	}
-	NewConfig()
+	e.InitEditor()
+
+	if len(os.Args) >= 2 {
+		e.OpenFile(os.Args[1])
+	}
 
 	for {
-		editorRefreshScreen()
-		editorProcessKeypress()
+		e.RefreshScreen()
+		e.HandleKeypress()
 	}
 }
