@@ -8,15 +8,22 @@ import (
 )
 
 // die gracefully exits program.
-func die(code int) {
+func die(e error) {
 	fmt.Print("\x1b[2J")
 	fmt.Print("\x1b[H")
 
 	err := disableRawMode()
 	if err != nil {
+		fmt.Printf("%s\r\n", e.Error())
 		os.Exit(1)
 	}
-	os.Exit(code)
+
+	if e != nil {
+		fmt.Printf("%s\r\n", e.Error())
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
 
 // getTermios copies the parameters associated with the terminal.
@@ -82,14 +89,68 @@ func enableRawMode(fd uintptr) error {
 }
 
 // editorReadKey waits for one keypress, and return it.
-func editorReadKey() (rune, error) {
+func editorReadKey() int {
+
 	b := make([]byte, 1)
-	_, err := syscall.Read(0, b)
-	if err != nil {
-		return 0, err
+	if n, err := os.Stdin.Read(b); n != 1 || err != nil {
+		return '\x1b'
 	}
 
-	return rune(b[0]), nil
+	c := int(b[0])
+
+	if c == '\x1b' {
+		seq := make([]byte, 3)
+		if _, err := os.Stdin.Read(seq[:2]); err != nil {
+			return '\x1b'
+		}
+
+		if seq[0] == '[' {
+			if seq[1] >= '0' && seq[1] <= '9' {
+				if _, err := os.Stdin.Read(seq[2:]); err != nil {
+					return '\x1b'
+				}
+				if seq[2] == '~' {
+					switch seq[1] {
+					case '1', '7':
+						return HOME
+					case '3':
+						return DEL
+					case '4', '8':
+						return END
+					case '5':
+						return PAGE_UP
+					case '6':
+						return PAGE_DOWN
+					}
+				}
+			} else {
+				switch seq[1] {
+				case 'D':
+					return ARROW_LEFT
+				case 'C':
+					return ARROW_RIGHT
+				case 'A':
+					return ARROW_UP
+				case 'B':
+					return ARROW_DOWN
+				case 'H':
+					return HOME
+				case 'F':
+					return END
+				}
+			}
+		} else if seq[0] == 'O' {
+			switch seq[1] {
+			case 'H':
+				return HOME
+			case 'F':
+				return END
+			}
+		}
+		return '\x1b'
+	}
+
+	return c
 }
 
 // getCursorPosition...

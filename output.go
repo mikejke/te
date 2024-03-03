@@ -6,7 +6,7 @@ import (
 
 func editorDrawRows(buf *string) {
 	for y := 0; y < Config.srows; y++ {
-		welcome := fmt.Sprintf("text editor -- version %s, %d;%d", VERSION, Config.cy+1, Config.cx+1)
+		welcome := fmt.Sprintf("text editor -- version %s", VERSION)
 		if y == Config.srows/3 {
 			if len(welcome) > Config.scols {
 				welcome = welcome[:Config.scols]

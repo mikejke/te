@@ -13,6 +13,6 @@ var Config EditorConfig
 
 func NewConfig() {
 	if err := getWindowSize(&Config.srows, &Config.scols); err != nil {
-		die(1)
+		die(err)
 	}
 }
